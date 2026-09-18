@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Архив · Агрегатор{% endblock %}
+{% block content %}
+<h1>Архив материалов</h1>
+
+<form method="get" action="/archive" class="filters">
+  <input type="text" name="search" placeholder="Поиск по заголовку и описанию" value="{{ search }}">
+  <select name="category">
+    <option value="">Все категории</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <label><input type="checkbox" name="only_unread" value="true" {% if only_unread %}checked{% endif %}> только непрочитанные</label>
+  <label><input type="checkbox" name="only_deferred" value="true" {% if only_deferred %}checked{% endif %}> только отложенные</label>
+  <button type="submit" class="btn-primary">Применить</button>
+</form>
+
+<ul class="items">
+  {% for item in items %}
+  <li class="item {% if item.is_read %}is-read{% endif %}">
+    <div class="item-main">
+      <a href="{{ item.link }}" target="_blank" rel="noopener" class="item-title">{{ item.title }}</a>
+      <div class="meta">
+        {{ item.source.name }}
+        {% if item.source.category %} · {{ item.source.category }}{% endif %}
+        {% if item.published_at %} · {{ item.published_at.strftime('%d.%m.%Y') }}{% endif %}
+      </div>
+      {% if item.summary %}<p class="summary">{{ item.summary }}</p>{% endif %}
+    </div>
+    <div class="actions">
+      <form method="post" action="/items/{{ item.id }}/read">
+        <button>{{ 'Отметить непрочитанным' if item.is_read else 'Отметить прочитанным' }}</button>
+      </form>
+      <form method="post" action="/items/{{ item.id }}/defer">
+        <button>{{ 'Убрать из отложенных' if item.is_deferred else 'Отложить' }}</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+  <li class="empty">Материалов пока нет. Добавьте источники на странице «Источники» — новые материалы появятся здесь после запуска парсинга.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
