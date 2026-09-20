@@ -30,7 +30,7 @@ def main():
     db.refresh(source)
     print(f"Добавлен источник: {source}\n")
 
-    print("=== Первый запуск парсера (ожидаем 2 новых материала) ===")
+    print("Первый запуск парсера (ожидаем 2 новых материала)")
     new_items = collect_new_items_for_source(db, source)
     for item in new_items:
         print(f"  + {item.title}\n    {item.link}\n    дата публикации: {item.published_at}\n")
