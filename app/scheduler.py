@@ -10,13 +10,11 @@ _scheduler: BackgroundScheduler | None = None
 
 
 def run_daily_job():
-    """Один цикл: спарсить все источники + отправить дайджест."""
     db = get_session()
     try:
         results = collect_new_items_for_all_sources(db)
         new_items = [item for items in results.values() for item in items]
 
-        # Отложенные материалы возвращаются в дайджест ещё раз
         deferred_items = (
             db.query(Item)
             .filter(Item.is_deferred == True, Item.is_sent == True)  # noqa: E712
@@ -31,14 +29,12 @@ def run_daily_job():
         else:
             print("[scheduler] Новых материалов нет, дайджест не отправлен")
     except Exception as exc:
-        # Ошибка в одном цикле не должна "убивать" весь процесс планировщика
         print(f"[scheduler] Ошибка при выполнении задачи: {exc}")
     finally:
         db.close()
 
 
 def start_scheduler() -> BackgroundScheduler:
-    """Запускает планировщик (идемпотентно — повторный вызов ничего не сломает)."""
     global _scheduler
     if _scheduler is not None:
         return _scheduler
