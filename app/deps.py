@@ -1,4 +1,4 @@
-"""FastAPI-зависимость: одна сессия БД на один запрос."""
+
 
 from app.database import get_session
 
