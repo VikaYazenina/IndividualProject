@@ -11,8 +11,6 @@ from app.main import app
 
 @pytest.fixture()
 def client():
-    # StaticPool: TestClient обращается к приложению из разных потоков,
-    # без него каждое подключение к ":memory:" получало бы отдельную (пустую) БД.
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
