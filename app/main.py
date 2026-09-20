@@ -1,13 +1,3 @@
-"""Точка входа приложения.
-
-Запуск для разработки:
-    uvicorn app.main:app --reload
-
-Собирает вместе:
-- REST API (app/routers) — для программного доступа и будущего мобильного клиента;
-- server-rendered веб-интерфейс (этапы 5-6 плана) — страницы "Источники", "Архив", "Статистика";
-- планировщик (app/scheduler) — регулярный парсинг + email-рассылка (этап 4).
-"""
 
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -40,14 +30,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Content Aggregator", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-# REST API
+
 app.include_router(sources.router)
 app.include_router(items.router)
-
-
-# ---------------------------------------------------------------------------
-# Веб-интерфейс (server-rendered страницы, этапы 5-6 плана)
-# ---------------------------------------------------------------------------
 
 
 @app.get("/", response_class=HTMLResponse)
