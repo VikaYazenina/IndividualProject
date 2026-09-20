@@ -20,7 +20,7 @@ def render_digest_html(items: List[Item]) -> str:
 
 
 def send_email(to_address: str, subject: str, html_body: str) -> bool:
-    """Отправляет письмо через SMTP. Возвращает True, если отправка удалась."""
+
     if not settings.SMTP_HOST or not to_address:
         print("[mailer] SMTP не настроен (см. .env) или не задан получатель.")
         print("[mailer] Ниже — тело письма, которое было бы отправлено:\n")
@@ -46,11 +46,7 @@ def send_email(to_address: str, subject: str, html_body: str) -> bool:
 
 
 def send_daily_digest(db: Session, items: List[Item], to_address: Optional[str] = None) -> bool:
-    """
-    Собирает список материалов в письмо и отправляет его.
-    После успешной отправки помечает материалы как is_sent=True,
-    чтобы не отправить их повторно в следующем дайджесте.
-    """
+    
     if not items:
         return False
 
