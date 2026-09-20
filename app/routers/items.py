@@ -28,7 +28,7 @@ def list_items(
     limit: int = Query(50, le=200),
     offset: int = 0,
 ):
-    """Расширенный поиск и фильтрация по архиву материалов."""
+    
     query = db.query(models.Item).join(models.Source)
 
     if source_id is not None:
@@ -68,7 +68,6 @@ def mark_read(item_id: int, read: bool = True, db: Session = Depends(get_db)):
 
 @router.patch("/{item_id}/defer", response_model=schemas.ItemOut)
 def mark_deferred(item_id: int, deferred: bool = True, db: Session = Depends(get_db)):
-    """Отложенное прочтение — материал повторно попадёт в следующее письмо."""
     item = db.get(models.Item, item_id)
     if not item:
         raise HTTPException(404, "Материал не найден")
@@ -80,7 +79,7 @@ def mark_deferred(item_id: int, deferred: bool = True, db: Session = Depends(get
 
 @router.get("/export")
 def export_items(db: Session = Depends(get_db), format: str = "csv"):
-    """Экспорт всего архива в CSV."""
+    
     if format != "csv":
         raise HTTPException(400, "Поддерживается только format=csv")
 
@@ -104,7 +103,7 @@ def export_items(db: Session = Depends(get_db), format: str = "csv"):
 
 @router.get("/stats")
 def get_stats(db: Session = Depends(get_db), days: int = 30):
-    """Аналитика потребления: сколько материалов собрано/прочитано за период."""
+    
     since = datetime.utcnow() - timedelta(days=days)
 
     total = db.query(models.Item).filter(models.Item.fetched_at >= since).count()
