@@ -14,17 +14,11 @@ REQUEST_TIMEOUT = 10
 
 
 def fetch_rss_entries(source: Source) -> List[Dict]:
-    """
-    Скачивает RSS/Atom-ленту источника и возвращает список записей
-    в унифицированном виде: title, link, summary, published_at.
-    """
+    
     parsed = feedparser.parse(source.url)
 
     if parsed.bozo and not parsed.entries:
-        # bozo=1 значит, что при разборе были проблемы (некорректный XML,
-        # недоступность и т.п.). Если при этом записей нет вообще — считаем,
-        # что источник сейчас недоступен, и возвращаем пустой список,
-        # не роняя весь процесс парсинга остальных источников.
+        
         return []
 
     entries = []
@@ -41,7 +35,6 @@ def fetch_rss_entries(source: Source) -> List[Dict]:
 
 
 def _parse_date(entry) -> Optional[datetime]:
-    """feedparser отдаёт дату в виде time.struct_time (published_parsed) — конвертируем в datetime."""
     time_struct = entry.get("published_parsed") or entry.get("updated_parsed")
     if time_struct is None:
         return None
@@ -49,7 +42,6 @@ def _parse_date(entry) -> Optional[datetime]:
 
 
 def _clean_summary(raw_summary: str, max_len: int = 500) -> str:
-    """Обрезает summary до разумной длины (в письме нам не нужен полный текст статьи)."""
     text = raw_summary.strip()
     if len(text) > max_len:
         text = text[:max_len].rsplit(" ", 1)[0] + "…"
@@ -57,16 +49,7 @@ def _clean_summary(raw_summary: str, max_len: int = 500) -> str:
 
 
 def fetch_html_entries(source: Source) -> List[Dict]:
-    """
-    Парсит статическую HTML-страницу источника без RSS-ленты, используя
-    CSS-селекторы, заданные пользователем при добавлении источника:
-    html_item_selector  — блок одного материала (например, ".post")
-    html_title_selector — заголовок внутри блока (например, ".post-title")
-    html_link_selector  — ссылка внутри блока (например, "a.post-link")
-
-    Если селекторы не заданы или страница недоступна — источник молча
-    пропускается (возвращается пустой список), чтобы не ронять весь обход.
-    """
+    
     if not source.html_item_selector:
         print(f"[parser] У источника '{source.name}' не задан html_item_selector — пропускаю")
         return []
@@ -78,8 +61,6 @@ def fetch_html_entries(source: Source) -> List[Dict]:
         print(f"[parser] Не удалось загрузить '{source.url}': {exc}")
         return []
 
-    # response.content (байты) + автоопределение кодировки внутри BeautifulSoup —
-    # надёжнее, чем response.text, если сервер не прислал корректный charset.
     soup = BeautifulSoup(response.content, "html.parser")
     blocks = soup.select(source.html_item_selector)
 
@@ -94,21 +75,19 @@ def fetch_html_entries(source: Source) -> List[Dict]:
         if link_el is not None:
             href = link_el.get("href") or (link_el.find("a").get("href") if link_el.find("a") else None)
         if not href:
-            continue  # без ссылки материал бесполезен — пропускаем
-
+            continue 
         entries.append(
             {
                 "title": title,
                 "link": urljoin(source.url, href),
                 "summary": "",
-                "published_at": None,  # у статических страниц обычно нет структурированной даты
+                "published_at": None,  
             }
         )
     return entries
 
 
 def fetch_entries_for_source(source: Source) -> List[Dict]:
-    """Диспетчер: выбирает способ парсинга в зависимости от типа источника."""
     if source.type == SourceType.RSS:
         return fetch_rss_entries(source)
     elif source.type == SourceType.HTML:
@@ -118,7 +97,7 @@ def fetch_entries_for_source(source: Source) -> List[Dict]:
 
 
 def filter_new_entries(db: Session, source: Source, entries: List[Dict]) -> List[Dict]:
-    """Оставляет только те записи, ссылок которых ещё нет в БД для этого источника."""
+    
     if not entries:
         return []
 
@@ -129,7 +108,6 @@ def filter_new_entries(db: Session, source: Source, entries: List[Dict]) -> List
 
 
 def save_new_items(db: Session, source: Source, new_entries: List[Dict]) -> List[Item]:
-    """Сохраняет отфильтрованные записи как объекты Item и коммитит транзакцию."""
     items = []
     for entry in new_entries:
         item = Item(
@@ -151,18 +129,14 @@ def save_new_items(db: Session, source: Source, new_entries: List[Dict]) -> List
 
 
 def collect_new_items_for_source(db: Session, source: Source) -> List[Item]:
-    """
-    Главная функция этапа 2: "функция, возвращающая новые материалы для любого источника".
-    Скачивает ленту, отфильтровывает уже известные материалы, сохраняет новые в БД
-    и возвращает список созданных объектов Item.
-    """
+    
     entries = fetch_entries_for_source(source)
     new_entries = filter_new_entries(db, source, entries)
     return save_new_items(db, source, new_entries)
 
 
 def collect_new_items_for_all_sources(db: Session) -> Dict[str, List[Item]]:
-    """Проходит по всем активным источникам и собирает новые материалы по каждому."""
+    
     result = {}
     active_sources = db.query(Source).filter(Source.is_active == True).all()  # noqa: E712
     for source in active_sources:
