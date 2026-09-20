@@ -61,7 +61,7 @@ def delete_source(source_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{source_id}/fetch", response_model=List[schemas.ItemOut])
 def fetch_source_now(source_id: int, db: Session = Depends(get_db)):
-    """Ручной запуск парсинга конкретного источника (не дожидаясь планировщика)."""
+    
     source = db.get(models.Source, source_id)
     if not source:
         raise HTTPException(404, "Источник не найден")
