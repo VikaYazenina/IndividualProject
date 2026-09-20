@@ -66,7 +66,6 @@ def test_collect_new_items_is_idempotent(db_session, sample_source):
 
 
 def test_html_parser_finds_entries(db_session, local_http_server):
-    """Проверяет парсинг статической HTML-страницы через заданные CSS-селекторы."""
     source = Source(
         name="Тестовый сайт без RSS",
         url=f"{local_http_server}/sample_page.html",
@@ -83,12 +82,11 @@ def test_html_parser_finds_entries(db_session, local_http_server):
     assert len(new_items) == 2
     titles = {item.title for item in new_items}
     assert "Разбор тактики 4-3-3 в современном футболе" in titles
-    # Относительная ссылка должна быть превращена в абсолютную
     assert all(item.link.startswith("http://127.0.0.1") for item in new_items)
 
 
 def test_html_parser_without_selector_returns_empty(db_session, local_http_server):
-    """Без html_item_selector источник HTML-типа должен просто пропускаться, а не падать."""
+    
     source = Source(
         name="Источник без селектора",
         url=f"{local_http_server}/sample_page.html",
