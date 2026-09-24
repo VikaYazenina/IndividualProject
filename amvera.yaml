@@ -8,5 +8,4 @@ build:
   requirementsPath: requirements.txt
 
 run:
-  scriptName: uvicorn app.main:app
-  args: --host 0.0.0.0 --port 80
+  command: uvicorn app.main:app --host 0.0.0.0 --port 80
