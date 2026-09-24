@@ -1,4 +1,3 @@
-
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -108,7 +107,7 @@ def archive_page(
     only_unread: bool = False,
     only_deferred: bool = False,
 ):
-  query = db.query(models.Item).join(models.Source)
+    query = db.query(models.Item).join(models.Source)
 
     if search:
         like = f"%{search}%"
@@ -159,8 +158,8 @@ def toggle_defer_form(item_id: int, db: Session = Depends(get_db)):
 def stats_page(request: Request, db: Session = Depends(get_db), days: int = 30):
     from collections import Counter
     from datetime import datetime, timedelta
-
     from sqlalchemy import func
+
     since = datetime.utcnow() - timedelta(days=days)
     total = db.query(models.Item).filter(models.Item.fetched_at >= since).count()
     read = (
