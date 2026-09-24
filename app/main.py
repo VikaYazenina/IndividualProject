@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app import models
+from app.models import Base
 from app.database import init_db
 from app.deps import get_db
 from app.parser import collect_new_items_for_source
