@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ContentHarvest{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="nav">
+    <a href="/archive" class="brand">ContentHarvest</a>
+    <div style="display:flex; align-items:center;">
+      <nav class="nav-links">
+        <a href="/archive">Архив</a>
+        <a href="/sources">Источники</a>
+        <a href="/stats">Статистика</a>
+        <a href="/api/items/export">Экспорт CSV</a>
+        <a href="/docs" target="_blank">API</a>
+      </nav>
+      {% if user %}
+      <div class="nav-user">
+        <span class="email">{{ user.email }}</span>
+        <form method="post" action="/logout"><button type="submit" class="link-btn">Выйти</button></form>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
