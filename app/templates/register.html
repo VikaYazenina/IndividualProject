@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация · ContentHarvest</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <a href="/register" class="brand">ContentHarvest</a>
+      <h1>Создайте аккаунт — на этот email будет приходить дайджест</h1>
+
+      {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+
+      <form method="post" action="/register" class="auth-form">
+        <label>Email
+          <input type="email" name="email" required autofocus placeholder="you@example.com">
+        </label>
+        <label>Пароль
+          <input type="password" name="password" required minlength="6">
+        </label>
+        <label>Повторите пароль
+          <input type="password" name="password_confirm" required minlength="6">
+        </label>
+        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+      </form>
+
+      <div class="auth-switch">
+        Уже есть аккаунт? <a href="/login">Войти</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
