@@ -1,25 +1,30 @@
-
-
 import os
 
-from database import init_db, get_session, engine
-from models import Source, SourceType, Item
-from parser import collect_new_items_for_source
+from app.database import init_db, get_session
+from app.models import Source, SourceType, Item, User
+from app.parser import collect_new_items_for_source
+from app.security import hash_password
 
-FEED_PATH = os.path.join(os.path.dirname(__file__), "sample_feed.xml")
-FEED_URL = f"file://{FEED_PATH}"
+FEED_PATH = os.path.join(os.path.dirname(__file__), "..", "tests", "sample_feed.xml")
+FEED_URL = f"file://{os.path.abspath(FEED_PATH)}"
 
 
 def main():
-    
-    db_path = os.path.join(os.path.dirname(__file__), "aggregator.db")
+    db_path = os.path.join(os.path.dirname(__file__), "..", "aggregator.db")
     if os.path.exists(db_path):
         os.remove(db_path)
 
     init_db()
     db = get_session()
 
+    demo_user = User(email="demo@example.com", hashed_password=hash_password("demo12345"))
+    db.add(demo_user)
+    db.commit()
+    db.refresh(demo_user)
+    print(f"Создан демо-пользователь: {demo_user.email}\n")
+
     source = Source(
+        owner_id=demo_user.id,
         name="Тестовый блог о спортивной аналитике",
         url=FEED_URL,
         type=SourceType.RSS,
