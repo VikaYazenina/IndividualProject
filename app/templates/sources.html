@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Источники · ContentHarvest{% endblock %}
+{% block content %}
+<h1>Источники</h1>
+
+<section class="card">
+  <h2>Добавить источник</h2>
+  <form method="post" action="/sources/add" class="form-grid">
+    <label>Название
+      <input type="text" name="name" required placeholder="Например: Блог о спортивной аналитике">
+    </label>
+    <label>URL
+      <input type="url" name="url" required placeholder="https://example.com/rss">
+    </label>
+    <label>Тип источника
+      <select name="type" onchange="document.getElementById('html-fields').style.display = this.value === 'html' ? 'block' : 'none'">
+        <option value="rss">RSS-лента</option>
+        <option value="html">Страница без RSS (HTML)</option>
+      </select>
+    </label>
+    <label>Категория / тэг
+      <input type="text" name="category" placeholder="спорт, наука, аналитика...">
+    </label>
+
+    <fieldset id="html-fields" style="display:none; grid-column: 1 / -1;">
+      <legend>Только для типа «HTML» — CSS-селекторы материала на странице</legend>
+      <div class="form-grid">
+        <label>Селектор блока материала
+          <input type="text" name="html_item_selector" placeholder=".post-card">
+        </label>
+        <label>Селектор заголовка (внутри блока)
+          <input type="text" name="html_title_selector" placeholder=".post-title">
+        </label>
+        <label>Селектор ссылки (внутри блока)
+          <input type="text" name="html_link_selector" placeholder="a.post-link">
+        </label>
+      </div>
+    </fieldset>
+
+    <button type="submit" class="btn-primary">Добавить источник</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Мои источники ({{ sources|length }})</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Тип</th>
+        <th>Категория</th>
+        <th>Статус</th>
+        <th>Материалов</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sources %}
+      <tr>
+        <td><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.name }}</a></td>
+        <td>{{ 'RSS' if s.type.value == 'rss' else 'HTML' }}</td>
+        <td>{{ s.category or '—' }}</td>
+        <td>
+          <span class="badge {{ 'badge-on' if s.is_active else 'badge-off' }}">
+            {{ 'Активен' if s.is_active else 'Выключен' }}
+          </span>
+        </td>
+        <td>{{ s.items|length }}</td>
+        <td class="actions">
+          <form method="post" action="/sources/{{ s.id }}/fetch-now"><button>Обновить</button></form>
+          <form method="post" action="/sources/{{ s.id }}/toggle"><button>{{ 'Выключить' if s.is_active else 'Включить' }}</button></form>
+          <form method="post" action="/sources/{{ s.id }}/delete" onsubmit="return confirm('Удалить источник и все его материалы?')">
+            <button class="danger">Удалить</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">Источников пока нет — добавьте первый выше.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
