@@ -97,8 +97,8 @@ app.include_router(items.router)
 
 
 @app.get("/register", response_class=HTMLResponse)
-def register_page(request: Request):
-    if request.session.get("user_id"):
+def register_page(request: Request, db: Session = Depends(get_db)):
+    if get_current_user_optional(request, db):
         return RedirectResponse("/archive")
     return templates.TemplateResponse("register.html", ctx(request, error=None))
 
@@ -118,6 +118,13 @@ def register_submit(
             "register.html", ctx(request, error=message), status_code=400
         )
 
+    try:
+        from email_validator import EmailNotValidError, validate_email
+
+        email = validate_email(email, check_deliverability=False).normalized.lower()
+    except EmailNotValidError:
+        return render_error("Введите корректный email")
+
     if password != password_confirm:
         return render_error("Пароли не совпадают")
     if len(password) < 6:
@@ -135,7 +142,9 @@ def register_submit(
 
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request):
+def login_page(request: Request, db: Session = Depends(get_db)):
+    if get_current_user_optional(request, db):
+        return RedirectResponse("/archive")
     return templates.TemplateResponse("login.html", ctx(request, error=None))
 
 

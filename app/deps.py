@@ -28,7 +28,12 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -
     user_id = request.session.get("user_id")
     if not user_id:
         return None
-    return db.get(User, user_id)
+    user = db.get(User, user_id)
+    if user is None:
+        # Cookie осталась от пользователя, которого больше нет в БД (база пересоздана,
+        # аккаунт удалён). Сбрасываем её, иначе /register и /login ведут по кругу.
+        request.session.clear()
+    return user
 
 
 def require_user(
