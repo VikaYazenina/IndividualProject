@@ -71,6 +71,12 @@ class Source(Base):
     html_title_selector = Column(String(300), nullable=True)
     html_link_selector = Column(String(300), nullable=True)
 
+    # Результат последней проверки — чтобы на сайте было видно, работает ли парсинг
+    last_checked_at = Column(DateTime, nullable=True)
+    last_error = Column(String(500), nullable=True)   # None = последняя проверка прошла успешно
+    last_found_count = Column(Integer, nullable=True)  # сколько записей в ленте/на странице
+    last_new_count = Column(Integer, nullable=True)    # сколько из них оказались новыми
+
     owner = relationship("User", back_populates="sources")
     items = relationship("Item", back_populates="source", cascade="all, delete-orphan")
 

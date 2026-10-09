@@ -15,6 +15,7 @@
 только данные текущего пользователя.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -29,13 +30,48 @@ from app import models
 from app.config import settings
 from app.database import init_db
 from app.deps import get_current_user_optional, get_db
+from app.mailer import send_digest_for_user
 from app.parser import collect_new_items_for_source
 from app.routers import items, sources
 from app.scheduler import start_scheduler, stop_scheduler
 from app.security import hash_password, verify_password
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+def _localtime(dt):
+    """UTC из БД -> время в часовом поясе сервиса (settings.TIMEZONE)."""
+    if not dt:
+        return ""
+    import pytz
+
+    return pytz.utc.localize(dt).astimezone(pytz.timezone(settings.TIMEZONE)).strftime("%d.%m %H:%M")
+
+
+templates.env.filters["localtime"] = _localtime
+
+
+def ctx(request: Request, **kwargs) -> dict:
+    """Общий контекст страниц: request + одноразовое сообщение (flash) из сессии."""
+    return {"request": request, "flash": request.session.pop("flash", None), **kwargs}
+
+
+def flash(request: Request, kind: str, text: str):
+    request.session["flash"] = {"kind": kind, "text": text}
+
+
+def _report_fetch(request: Request, source: models.Source, new_count: int, prefix: str = ""):
+    if source.last_error:
+        flash(request, "error", f"{prefix}Не удалось получить материалы: {source.last_error}")
+    else:
+        flash(
+            request,
+            "success",
+            f"{prefix}Проверено: в источнике {source.last_found_count}, новых добавлено в архив: {new_count}",
+        )
 
 
 @asynccontextmanager
@@ -64,7 +100,7 @@ app.include_router(items.router)
 def register_page(request: Request):
     if request.session.get("user_id"):
         return RedirectResponse("/archive")
-    return templates.TemplateResponse("register.html", {"request": request, "error": None})
+    return templates.TemplateResponse("register.html", ctx(request, error=None))
 
 
 @app.post("/register")
@@ -79,7 +115,7 @@ def register_submit(
 
     def render_error(message: str):
         return templates.TemplateResponse(
-            "register.html", {"request": request, "error": message}, status_code=400
+            "register.html", ctx(request, error=message), status_code=400
         )
 
     if password != password_confirm:
@@ -100,7 +136,7 @@ def register_submit(
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse("login.html", ctx(request, error=None))
 
 
 @app.post("/login")
@@ -116,7 +152,7 @@ def login_submit(
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Неверный email или пароль"},
+            ctx(request, error="Неверный email или пароль"),
             status_code=400,
         )
 
@@ -153,7 +189,7 @@ def sources_page(request: Request, db: Session = Depends(get_db)):
         .all()
     )
     return templates.TemplateResponse(
-        "sources.html", {"request": request, "sources": my_sources, "user": user}
+        "sources.html", ctx(request, sources=my_sources, user=user)
     )
 
 
@@ -173,18 +209,34 @@ def add_source_form(
     if not user:
         return RedirectResponse("/login")
 
+    url = url.strip()
+    duplicate = (
+        db.query(models.Source)
+        .filter(models.Source.owner_id == user.id, models.Source.url == url)
+        .first()
+    )
+    if duplicate:
+        flash(request, "error", "Этот источник у вас уже добавлен")
+        return RedirectResponse("/sources", status_code=303)
+
     source = models.Source(
         owner_id=user.id,
-        name=name,
+        name=name.strip(),
         url=url,
         type=models.SourceType(type),
-        category=category or None,
-        html_item_selector=html_item_selector or None,
-        html_title_selector=html_title_selector or None,
-        html_link_selector=html_link_selector or None,
+        category=category.strip() or None,
+        html_item_selector=html_item_selector.strip() or None,
+        html_title_selector=html_title_selector.strip() or None,
+        html_link_selector=html_link_selector.strip() or None,
     )
     db.add(source)
     db.commit()
+    db.refresh(source)
+
+    # Сразу проверяем источник, чтобы пользователь увидел результат (или причину
+    # ошибки), а не ждал планировщика.
+    new_items = collect_new_items_for_source(db, source)
+    _report_fetch(request, source, len(new_items), prefix="Источник добавлен. ")
     return RedirectResponse("/sources", status_code=303)
 
 
@@ -226,7 +278,8 @@ def fetch_source_now_form(source_id: int, request: Request, db: Session = Depend
         return RedirectResponse("/login")
     source = _get_owned_source_or_none(db, source_id, user)
     if source:
-        collect_new_items_for_source(db, source)
+        new_items = collect_new_items_for_source(db, source)
+        _report_fetch(request, source, len(new_items))
     return RedirectResponse("/sources", status_code=303)
 
 
@@ -272,16 +325,16 @@ def archive_page(
 
     return templates.TemplateResponse(
         "archive.html",
-        {
-            "request": request,
-            "items": items_list,
-            "categories": categories,
-            "search": search,
-            "category": category,
-            "only_unread": only_unread,
-            "only_deferred": only_deferred,
-            "user": user,
-        },
+        ctx(
+            request,
+            items=items_list,
+            categories=categories,
+            search=search,
+            category=category,
+            only_unread=only_unread,
+            only_deferred=only_deferred,
+            user=user,
+        ),
     )
 
 
@@ -319,6 +372,17 @@ def toggle_defer_form(item_id: int, request: Request, db: Session = Depends(get_
     return RedirectResponse("/archive", status_code=303)
 
 
+@app.post("/digest/send-now")
+def send_digest_now(request: Request, db: Session = Depends(get_db)):
+    """Ручная отправка дайджеста себе — чтобы проверить, что почта настроена и работает."""
+    user = get_current_user_optional(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    ok, message = send_digest_for_user(db, user)
+    flash(request, "success" if ok else "error", message)
+    return RedirectResponse("/archive", status_code=303)
+
+
 @app.get("/stats", response_class=HTMLResponse)
 def stats_page(request: Request, db: Session = Depends(get_db), days: int = 30):
     from datetime import datetime, timedelta
@@ -348,12 +412,5 @@ def stats_page(request: Request, db: Session = Depends(get_db), days: int = 30):
 
     return templates.TemplateResponse(
         "stats.html",
-        {
-            "request": request,
-            "days": days,
-            "total": total,
-            "read": read,
-            "by_source": dict(by_source_rows),
-            "user": user,
-        },
+        ctx(request, days=days, total=total, read=read, by_source=dict(by_source_rows), user=user),
     )
