@@ -50,6 +50,7 @@
         <th>Тип</th>
         <th>Категория</th>
         <th>Статус</th>
+        <th>Последняя проверка</th>
         <th>Материалов</th>
         <th>Действия</th>
       </tr>
@@ -65,6 +66,17 @@
             {{ 'Активен' if s.is_active else 'Выключен' }}
           </span>
         </td>
+        <td class="check-status">
+          {% if s.last_error %}
+            <span class="status-error">{{ s.last_error }}</span>
+            <span class="status-time">{{ s.last_checked_at|localtime }}</span>
+          {% elif s.last_checked_at %}
+            <span class="status-ok">Работает: в источнике {{ s.last_found_count }}, новых {{ s.last_new_count }}</span>
+            <span class="status-time">{{ s.last_checked_at|localtime }}</span>
+          {% else %}
+            <span class="status-time">Ещё не проверялся</span>
+          {% endif %}
+        </td>
         <td>{{ s.items|length }}</td>
         <td class="actions">
           <form method="post" action="/sources/{{ s.id }}/fetch-now"><button>Обновить</button></form>
@@ -75,7 +87,7 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="6">Источников пока нет — добавьте первый выше.</td></tr>
+      <tr><td colspan="7">Источников пока нет — добавьте первый выше.</td></tr>
       {% endfor %}
     </tbody>
   </table>
