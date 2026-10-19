@@ -423,3 +423,8 @@ def stats_page(request: Request, db: Session = Depends(get_db), days: int = 30):
         "stats.html",
         ctx(request, days=days, total=total, read=read, by_source=dict(by_source_rows), user=user),
     )
+
+@app.get("/help", response_class=HTMLResponse)
+def help_page(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_optional(request, db)
+    return templates.TemplateResponse("help.html", ctx(request, user=user))
