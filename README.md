@@ -1,6 +1,8 @@
 # ContentHarvest
 
 Веб-сервис для персональной агрегации контента: собирает новые материалы из выбранных источников (RSS/Atom и статические страницы), хранит их в архиве и присылает ежедневный email-дайджест.
+![Tests](https://github.com/VikaYazenina/IndividualProject/actions/workflows/tests.yml/badge.svg)
+![Docker build](https://github.com/VikaYazenina/IndividualProject/actions/workflows/docker.yml/badge.svg)
 
 **Сервис:** https://contentharvest.online · **Заявка:** [final_application.md](final_application.md) · **Сценарии:** [final_userscripts.md](final_userscripts.md) 
 
