@@ -3,6 +3,7 @@
 Веб-сервис для персональной агрегации контента: собирает новые материалы из выбранных источников (RSS/Atom и статические страницы), хранит их в архиве и присылает ежедневный email-дайджест.
 
 **Сервис:** https://contentharvest.online · **Заявка:** [final_application.md](final_application.md) · **Сценарии:** [final_userscripts.md](final_userscripts.md) 
+
 ## Возможности
 1. Управление источниками (добавление, редактирование, удаление, ручная проверка)
 2. Автоматический ежедневный парсинг (RSS/Atom, HTML по CSS-селекторам)
@@ -10,7 +11,7 @@
 4. Категории источников
 5. Ежедневный email-дайджест (Jinja2)
 6. Отложенное прочтение: материал попадает в следующее письмо
-7. Экспорт данных [проверь: формат CSV и где кнопка]
+7. Экспорт данных 
 8. Статистика: собрано и прочитано за период, по источникам
 9. Поиск по заголовкам, фильтры по категории и статусу
 10. Регистрация: у каждого пользователя свои данные
@@ -18,7 +19,7 @@
 ## Стек и обоснование выбора
 | Инструмент | Зачем |
 |---|---|
-| Python 3.12 | Богатая экосистема для парсинга и бэкенда, язык, которым я владею лучше всего |
+| Python 3.11 | Богатая экосистема для парсинга и бэкенда, язык, которым я владею лучше всего |
 | FastAPI + Uvicorn | Один фреймворк и для REST API, и для серверных страниц; автоматическая документация `/docs` |
 | SQLAlchemy + SQLite | ORM позволяет сменить БД на PostgreSQL заменой `DATABASE_URL`; SQLite достаточно для MVP и не требует отдельного сервера |
 | Jinja2 | Шаблоны страниц и писем на одном движке |
@@ -27,6 +28,41 @@
 | smtplib | Отправка писем через любой SMTP-сервер без внешних зависимостей |
 | pytest, ruff | Модульные тесты и проверка стиля кода (PEP 8) |
 | Docker, GitHub Actions, Amvera | Воспроизводимая сборка и проверка запуска в CI |
+
+## Модель данных
+```mermaid
+classDiagram
+    class User {
+        +int id
+        +str email
+        +str hashed_password
+        +datetime created_at
+    }
+    class Source {
+        +int id
+        +int owner_id
+        +str name
+        +str url
+        +SourceType type
+        +str category
+        +bool is_active
+        +datetime last_checked_at
+        +str last_error
+    }
+    class Item {
+        +int id
+        +int source_id
+        +str title
+        +str link
+        +str summary
+        +datetime published_at
+        +bool is_read
+        +bool is_deferred
+        +bool is_sent
+    }
+    User "1" --> "*" Source : владеет
+    Source "1" --> "*" Item : содержит
+```
 
 ## Структура
 - `app/main.py` — страницы и точка входа; `app/routers/` — REST API
@@ -49,7 +85,8 @@ pytest -q
 
 ## CI/CD
 - `.github/workflows/tests.yml` — проверка стиля (ruff) и тесты при каждом push
-- `.github/workflows/deploy.yml` — сборка Docker-образа, проверка запуска, деплой на Amvera
-
+- `.github/workflows/docker.yml` — сборка Docker-образа и проверка запуска контейнера
+- Хостинг: Amvera (`amvera.yaml`, точка входа `run.py`)
+  
 ## Ограничения
 - HTML-парсер не видит материалы, которые сайт подгружает через JavaScript: сервис сообщает об этом пользователю.
