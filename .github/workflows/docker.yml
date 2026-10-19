@@ -13,6 +13,8 @@ jobs:
         run: docker build -t contentharvest:${{ github.sha }} .
       - name: Проверка запуска контейнера
         run: |
-          docker run -d --name ch -p 8000:80 -e SECRET_KEY=ci-test contentharvest:${{ github.sha }}
+          docker run -d --name ch -p 8000:8000 -e SECRET_KEY=ci-test contentharvest:${{ github.sha }}
           curl --retry 15 --retry-delay 2 --retry-connrefused -fsS http://localhost:8000/login > /dev/null
-          docker logs ch
+      - name: Логи контейнера
+        if: always()
+        run: docker logs ch || true
