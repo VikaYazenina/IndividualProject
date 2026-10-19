@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-       - run: pip install -r requirements.txt ruff==0.17.1
+      - run: pip install -r requirements.txt ruff==0.17.1
       - name: Проверка стиля кода
         run: ruff check app tests
       - name: Модульные тесты
