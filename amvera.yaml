@@ -12,4 +12,5 @@ run:
   containerPort: 80
   zeroDowntime: true
   singleton: false
+  persistenceMount: /data
 
