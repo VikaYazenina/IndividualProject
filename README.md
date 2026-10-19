@@ -2,7 +2,7 @@
 
 Веб-сервис для персональной агрегации контента: собирает новые материалы из выбранных источников (RSS/Atom и статические страницы), хранит их в архиве и присылает ежедневный email-дайджест.
 
-**Сервис:** [https://contentharvest.online] · **Заявка:** [final_application.md](final_application.md) · **Сценарии:** [final_userscripts.md](final_userscripts.md) 
+**Сервис:** https://contentharvest.online · **Заявка:** [final_application.md](final_application.md) · **Сценарии:** [final_userscripts.md](final_userscripts.md) 
 ## Возможности
 1. Управление источниками (добавление, редактирование, удаление, ручная проверка)
 2. Автоматический ежедневный парсинг (RSS/Atom, HTML по CSS-селекторам)
