@@ -1,0 +1,32 @@
+name: Docker build and deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Сборка Docker-образа
+        run: docker build -t contentharvest:${{ github.sha }} .
+      - name: Проверка запуска контейнера
+        run: |
+          docker run -d --name ch -p 8000:8000 -e SECRET_KEY=ci-test contentharvest:${{ github.sha }}
+          curl --retry 15 --retry-delay 2 --retry-connrefused -fsS http://localhost:8000/login > /dev/null
+          docker logs ch
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Отправка в Amvera
+        env:
+          AMVERA_USER: ${{ secrets.AMVERA_USER }}
+          AMVERA_PASSWORD: ${{ secrets.AMVERA_PASSWORD }}
+          AMVERA_PROJECT: ${{ secrets.AMVERA_PROJECT }}
+        run: git push "https://${AMVERA_USER}:${AMVERA_PASSWORD}@git.amvera.ru/${AMVERA_USER}/${AMVERA_PROJECT}" HEAD:master --force
