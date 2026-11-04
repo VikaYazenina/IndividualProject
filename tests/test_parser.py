@@ -1,5 +1,3 @@
-"""Тесты модуля парсинга. Сеть не используется: загрузка страниц подменяется."""
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
