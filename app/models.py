@@ -1,11 +1,3 @@
-"""
-Модели SQLAlchemy для сервиса агрегации контента.
-
-User    — зарегистрированный пользователь (email + пароль)
-Source  — источник контента, ПРИНАДЛЕЖИТ конкретному пользователю (owner_id)
-Item    — конкретный материал, найденный в источнике
-"""
-
 import enum
 from datetime import datetime
 
@@ -26,7 +18,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    """Зарегистрированный пользователь сервиса."""
+   
 
     __tablename__ = "users"
 
@@ -43,16 +35,13 @@ class User(Base):
 
 class SourceType(str, enum.Enum):
     RSS = "rss"
-    HTML = "html"  # для страниц без RSS-ленты (нужен свой парсер под конкретный сайт)
+    HTML = "html"  
 
 
 class Source(Base):
-    """Источник контента, за которым следит конкретный пользователь."""
-
     __tablename__ = "sources"
     __table_args__ = (
-        # Один и тот же URL могут отслеживать РАЗНЫЕ пользователи — уникальность
-        # только в пределах одного владельца, а не глобально по всей таблице.
+        
         UniqueConstraint("owner_id", "url", name="uq_source_owner_url"),
     )
 
@@ -62,20 +51,20 @@ class Source(Base):
     name = Column(String(200), nullable=False)
     url = Column(String(500), nullable=False)
     type = Column(Enum(SourceType), nullable=False, default=SourceType.RSS)
-    category = Column(String(100), nullable=True)  # тэг/категория для группировки
+    category = Column(String(100), nullable=True)  
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # CSS-селекторы для источников типа HTML (когда нет RSS)
+    
     html_item_selector = Column(String(300), nullable=True)
     html_title_selector = Column(String(300), nullable=True)
     html_link_selector = Column(String(300), nullable=True)
 
-    # Результат последней проверки — чтобы на сайте было видно, работает ли парсинг
+    
     last_checked_at = Column(DateTime, nullable=True)
-    last_error = Column(String(500), nullable=True)   # None = последняя проверка прошла успешно
-    last_found_count = Column(Integer, nullable=True)  # сколько записей в ленте/на странице
-    last_new_count = Column(Integer, nullable=True)    # сколько из них оказались новыми
+    last_error = Column(String(500), nullable=True)  
+    last_found_count = Column(Integer, nullable=True)  
+    last_new_count = Column(Integer, nullable=True)    
 
     owner = relationship("User", back_populates="sources")
     items = relationship("Item", back_populates="source", cascade="all, delete-orphan")
@@ -85,7 +74,6 @@ class Source(Base):
 
 
 class Item(Base):
-    """Отдельный материал (статья/пост/апдейт), найденный в источнике."""
 
     __tablename__ = "items"
     __table_args__ = (UniqueConstraint("source_id", "link", name="uq_item_source_link"),)
@@ -97,12 +85,12 @@ class Item(Base):
     link = Column(String(700), nullable=False)
     summary = Column(Text, nullable=True)
 
-    published_at = Column(DateTime, nullable=True)   # дата публикации на источнике
-    fetched_at = Column(DateTime, default=datetime.utcnow)  # когда мы это нашли
+    published_at = Column(DateTime, nullable=True)  
+    fetched_at = Column(DateTime, default=datetime.utcnow)  
 
     is_read = Column(Boolean, default=False)
-    is_deferred = Column(Boolean, default=False)      # "отложенное прочтение" -> попадёт в следующее письмо
-    is_sent = Column(Boolean, default=False)           # уже включено в рассылку
+    is_deferred = Column(Boolean, default=False)      
+    is_sent = Column(Boolean, default=False)           
 
     source = relationship("Source", back_populates="items")
 
