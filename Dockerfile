@@ -5,6 +5,4 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 EXPOSE 8000
-# Один процесс: планировщик APScheduler работает внутри приложения,
-# при нескольких воркерах дайджесты уходили бы дважды
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
