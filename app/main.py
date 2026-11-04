@@ -1,20 +1,3 @@
-"""
-Точка входа приложения.
-
-Запуск для разработки:
-    uvicorn app.main:app --reload
-
-Собирает вместе:
-- REST API (app/routers) — для программного доступа;
-- server-rendered веб-интерфейс — страницы регистрации/входа, "Источники", "Архив", "Статистика";
-- планировщик (app/scheduler) — регулярный парсинг + email-рассылка (этап 4).
-
-ВАЖНО (исправление): раньше страницы были общими на всех посетителей —
-любой видел все источники и материалы. Теперь без входа доступны только
-/login и /register, а все остальные страницы требуют сессию и показывают
-только данные текущего пользователя.
-"""
-
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -43,7 +26,6 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def _localtime(dt):
-    """UTC из БД -> время в часовом поясе сервиса (settings.TIMEZONE)."""
     if not dt:
         return ""
     import pytz
@@ -55,7 +37,6 @@ templates.env.filters["localtime"] = _localtime
 
 
 def ctx(request: Request, **kwargs) -> dict:
-    """Общий контекст страниц: request + одноразовое сообщение (flash) из сессии."""
     return {"request": request, "flash": request.session.pop("flash", None), **kwargs}
 
 
@@ -86,14 +67,10 @@ app = FastAPI(title="ContentHarvest", lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-# REST API (сам требует авторизации на уровне роутеров, см. app/deps.py::require_user)
+
 app.include_router(sources.router)
 app.include_router(items.router)
 
-
-# ---------------------------------------------------------------------------
-# Регистрация / вход / выход
-# ---------------------------------------------------------------------------
 
 
 @app.get("/register", response_class=HTMLResponse)
@@ -175,11 +152,6 @@ def logout(request: Request):
     return RedirectResponse("/login", status_code=303)
 
 
-# ---------------------------------------------------------------------------
-# Веб-интерфейс (доступен только авторизованным пользователям)
-# ---------------------------------------------------------------------------
-
-
 @app.get("/", response_class=HTMLResponse)
 def home():
     return RedirectResponse("/archive")
@@ -242,8 +214,7 @@ def add_source_form(
     db.commit()
     db.refresh(source)
 
-    # Сразу проверяем источник, чтобы пользователь увидел результат (или причину
-    # ошибки), а не ждал планировщика.
+   
     new_items = collect_new_items_for_source(db, source)
     _report_fetch(request, source, len(new_items), prefix="Источник добавлен. ")
     return RedirectResponse("/sources", status_code=303)
@@ -383,7 +354,6 @@ def toggle_defer_form(item_id: int, request: Request, db: Session = Depends(get_
 
 @app.post("/digest/send-now")
 def send_digest_now(request: Request, db: Session = Depends(get_db)):
-    """Ручная отправка дайджеста себе — чтобы проверить, что почта настроена и работает."""
     user = get_current_user_optional(request, db)
     if not user:
         return RedirectResponse("/login")
