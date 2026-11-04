@@ -35,7 +35,7 @@ body {
 
 a { color: inherit; }
 
-/* ---------- Навигация ---------- */
+
 
 .nav {
   display: flex;
@@ -105,7 +105,7 @@ a { color: inherit; }
 }
 .link-btn:hover { background: var(--bg); color: var(--text); }
 
-/* ---------- Каркас страницы ---------- */
+
 
 .container {
   max-width: 880px;
@@ -127,7 +127,6 @@ h2 {
   color: var(--text);
 }
 
-/* ---------- Карточки ---------- */
 
 .card {
   background: var(--surface);
@@ -138,7 +137,7 @@ h2 {
   margin-bottom: 22px;
 }
 
-/* ---------- Формы ---------- */
+
 
 .form-grid {
   display: grid;
@@ -217,7 +216,7 @@ fieldset legend {
 }
 .btn-secondary:hover { background: var(--bg); }
 
-/* ---------- Таблицы ---------- */
+
 
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table th, .table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
@@ -256,7 +255,7 @@ fieldset legend {
 .actions button.danger { color: var(--danger); }
 .actions button.danger:hover { background: var(--danger-soft); }
 
-/* ---------- Фильтры архива ---------- */
+
 
 .filters {
   display: flex;
@@ -277,7 +276,6 @@ fieldset legend {
   gap: 6px;
 }
 
-/* ---------- Список материалов ---------- */
 
 .items { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 
@@ -318,7 +316,6 @@ fieldset legend {
   font-size: 14px;
 }
 
-/* ---------- Статистика ---------- */
 
 .stats-cards { display: flex; gap: 16px; margin-bottom: 24px; }
 .stat-card {
@@ -333,7 +330,6 @@ fieldset legend {
 .stat-number { font-size: 30px; font-weight: 700; color: var(--primary); letter-spacing: -0.02em; }
 .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
 
-/* ---------- Авторизация ---------- */
 
 .auth-page {
   min-height: 100vh;
@@ -397,7 +393,6 @@ fieldset legend {
 .auth-switch a { color: var(--primary); font-weight: 600; text-decoration: none; }
 .auth-switch a:hover { text-decoration: underline; }
 
-/* ---------- Сообщения и статус проверки ---------- */
 
 .flash {
   padding: 12px 16px;
