@@ -1,5 +1,3 @@
-"""Pydantic-схемы для запросов/ответов API (этап 3 + авторизация)."""
-
 from datetime import datetime
 from typing import Optional
 
