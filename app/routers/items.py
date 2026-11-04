@@ -1,10 +1,3 @@
-"""
-API работы с материалами (этапы 3, 6, 9 плана).
-
-Как и в sources.py — раньше данные были общими на всех. Теперь каждый
-запрос джойнит Source и фильтрует по Source.owner_id == текущий пользователь.
-"""
-
 import csv
 import io
 from datetime import datetime, timedelta
@@ -39,7 +32,7 @@ def list_items(
     limit: int = Query(50, le=200),
     offset: int = 0,
 ):
-    """Расширенный поиск и фильтрация по архиву материалов текущего пользователя."""
+    
     query = _owned_items_query(db, user)
 
     if source_id is not None:
@@ -102,7 +95,7 @@ def export_items(
     user: models.User = Depends(require_user),
     format: str = "csv",
 ):
-    """Экспорт архива текущего пользователя в CSV."""
+
     if format != "csv":
         raise HTTPException(400, "Поддерживается только format=csv")
 
@@ -130,7 +123,6 @@ def get_stats(
     user: models.User = Depends(require_user),
     days: int = 30,
 ):
-    """Аналитика потребления текущего пользователя за период."""
     since = datetime.utcnow() - timedelta(days=days)
 
     base = _owned_items_query(db, user).filter(models.Item.fetched_at >= since)
