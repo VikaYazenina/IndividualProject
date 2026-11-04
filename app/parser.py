@@ -1,16 +1,3 @@
-"""
-Модуль парсинга источников.
-
-Что исправлено по сравнению с первой версией:
-- feedparser.parse(url) не имел таймаута: один «зависший» сайт блокировал весь
-  фоновый обход навсегда. Теперь скачиваем через requests с таймаутом.
-- Если вместо RSS-ленты указана обычная страница сайта, раньше получался
-  пустой результат без единого сообщения. Теперь: сначала пробуем найти
-  ссылку на ленту в <head> страницы, а если не нашли — сохраняем понятную
-  причину в source.last_error, и она видна в интерфейсе.
-- Дубли ссылок внутри одной ленты роняли сохранение всей пачки.
-"""
-
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -49,7 +36,6 @@ def _download(url: str) -> bytes:
 
 
 def _discover_feed_url(html: bytes, base_url: str) -> Optional[str]:
-    """Ищет в <head> страницы ссылку на RSS/Atom-ленту."""
     soup = BeautifulSoup(html, "html.parser")
     for link in soup.find_all("link", href=True):
         rel = " ".join(link.get("rel", [])).lower()
@@ -60,15 +46,14 @@ def _discover_feed_url(html: bytes, base_url: str) -> Optional[str]:
 
 
 def fetch_rss_entries(source: Source) -> List[Dict]:
-    """Скачивает и разбирает RSS/Atom-ленту. При проблемах бросает FetchError."""
     if source.url.startswith("file://"):
-        parsed = feedparser.parse(source.url)  # локальные файлы — для демо и тестов
+        parsed = feedparser.parse(source.url)  
     else:
         content = _download(source.url)
         parsed = feedparser.parse(content)
 
         if not parsed.version:
-            # Это не лента. Возможно, пользователь указал адрес обычной страницы.
+            
             feed_url = _discover_feed_url(content, source.url)
             if feed_url and feed_url != source.url:
                 logger.info("Источник '%s': найдена лента %s", source.name, feed_url)
@@ -104,7 +89,7 @@ def _parse_date(entry) -> Optional[datetime]:
 
 
 def _clean_summary(raw_summary: str, max_len: int = 500) -> str:
-    # В summary у многих лент лежит HTML — оставляем только текст
+    
     text = BeautifulSoup(raw_summary or "", "html.parser").get_text(" ", strip=True)
     if len(text) > max_len:
         text = text[:max_len].rsplit(" ", 1)[0] + "…"
@@ -112,7 +97,6 @@ def _clean_summary(raw_summary: str, max_len: int = 500) -> str:
 
 
 def fetch_html_entries(source: Source) -> List[Dict]:
-    """Парсит HTML-страницу по CSS-селекторам пользователя. При проблемах бросает FetchError."""
     if not source.html_item_selector:
         raise FetchError("Для HTML-источника не задан селектор блока материала")
 
@@ -163,7 +147,7 @@ def fetch_entries_for_source(source: Source) -> List[Dict]:
 
 
 def filter_new_entries(db: Session, source: Source, entries: List[Dict]) -> List[Dict]:
-    """Оставляет записи, которых ещё нет в БД, и убирает дубли внутри самой пачки."""
+
     if not entries:
         return []
 
@@ -199,11 +183,6 @@ def save_new_items(db: Session, source: Source, new_entries: List[Dict]) -> List
 
 
 def collect_new_items_for_source(db: Session, source: Source) -> List[Item]:
-    """
-    Проверяет один источник, сохраняет новые материалы и записывает результат
-    проверки в сам источник (last_checked_at / last_error / last_*_count).
-    Никогда не бросает исключений наружу — ошибка попадает в source.last_error.
-    """
     source.last_checked_at = datetime.utcnow()
     try:
         entries = fetch_entries_for_source(source)
@@ -238,7 +217,6 @@ def _record_failure(db: Session, source: Source, message: str):
 
 
 def collect_new_items_for_all_sources(db: Session) -> Dict[int, List[Item]]:
-    """Обходит ВСЕ активные источники всех пользователей. Ключ результата — source.id."""
     result = {}
     for source in db.query(Source).filter(Source.is_active == True).all():  # noqa: E712
         result[source.id] = collect_new_items_for_source(db, source)
