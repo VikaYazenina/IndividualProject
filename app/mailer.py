@@ -1,16 +1,3 @@
-"""
-Формирование и отправка email-дайджеста.
-
-Что исправлено:
-- Раньше в письмо попадали только материалы, найденные в ТЕКУЩЕМ запуске
-  парсера. Если письмо не уходило (SMTP не настроен или сбой), эти материалы
-  оставались is_sent=False и больше никогда не попадали ни в одно письмо.
-  Теперь дайджест = все ещё не отправленные и не прочитанные материалы
-  пользователя (не больше DIGEST_LIMIT штук за раз), плюс отложенные.
-- Порт 465 (Яндекс, Mail.ru) требует SSL с первого байта; STARTTLS там не работает.
-- Причина неудачи возвращается наружу и показывается в интерфейсе.
-"""
-
 import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -42,7 +29,6 @@ def smtp_configured() -> bool:
 
 
 def send_email(to_address: str, subject: str, html_body: str) -> Tuple[bool, str]:
-    """Возвращает (успех, сообщение). Сообщение — причина неудачи или пустая строка."""
     if not to_address:
         return False, "Не указан адрес получателя"
     if not smtp_configured():
@@ -94,10 +80,6 @@ def build_digest_items(db: Session, user: User) -> List[Item]:
 
 
 def send_digest_for_user(db: Session, user: User) -> Tuple[bool, str]:
-    """
-    Собирает и отправляет дайджест одному пользователю на его email.
-    Возвращает (успех, сообщение для пользователя).
-    """
     items = build_digest_items(db, user)
     if not items:
         return False, "Нет новых материалов для дайджеста"
@@ -111,7 +93,7 @@ def send_digest_for_user(db: Session, user: User) -> Tuple[bool, str]:
 
     for item in items:
         item.is_sent = True
-        item.is_deferred = False  # напоминание «отложенного» сработало один раз
+        item.is_deferred = False  
     db.commit()
     logger.info("Дайджест отправлен: %s, материалов: %d", user.email, len(items))
     return True, f"Дайджест из {len(items)} материалов отправлен на {user.email}"
