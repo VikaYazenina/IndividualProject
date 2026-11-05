@@ -132,7 +132,7 @@
 * Замер времени(метрика T2) среди ЦА
 * Документация для защиты
 
-  ``mermaid
+  ```mermaid
 gantt
     title ContentHarvest: график работы (2026)
     dateFormat YYYY-MM-DD
